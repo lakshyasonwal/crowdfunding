@@ -1,37 +1,32 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
-contract DecentralizedDonationSystem {
+contract Project {
     address public owner;
-    mapping(address => uint256) public donations;
     uint256 public totalDonations;
 
-    event Donated(address indexed donor, uint256 amount);
-    event Withdrawn(address indexed owner, uint256 amount);
+    mapping(address => uint256) public donations;
 
     constructor() {
         owner = msg.sender;
     }
 
-    // Function 1: Donate ETH
-    function donate() external payable {
-        require(msg.value > 0, "Donation must be greater than zero");
+    // 1️⃣ Function to accept donations
+    function donate() public payable {
+        require(msg.value > 0, "Donation must be greater than 0");
         donations[msg.sender] += msg.value;
         totalDonations += msg.value;
-        emit Donated(msg.sender, msg.value);
     }
 
-    // Function 2: Check Donation by User
-    function checkDonation(address donor) external view returns (uint256) {
-        return donations[donor];
+    // 2️⃣ Function to check total donations
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
     }
 
-    // Function 3: Withdraw All Donations (only owner)
-    function withdraw() external {
+    // 3️⃣ Function for the owner to withdraw funds
+    function withdraw(uint256 amount) public {
         require(msg.sender == owner, "Only owner can withdraw");
-        uint256 amount = address(this).balance;
+        require(amount <= address(this).balance, "Insufficient balance");
         payable(owner).transfer(amount);
-        emit Withdrawn(owner, amount);
     }
 }
-
