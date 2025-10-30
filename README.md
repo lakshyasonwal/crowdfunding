@@ -19,5 +19,6 @@ To create a decentralized and transparent charity system where every donation is
 - Enable multi-signature withdrawals.
 - Develop a frontend DApp interface for easier donations.
 
+
 ## Contract Details : 0xA91E710811f203c42F598f4f536BbB70E5334181
 <img width="1918" height="1022" alt="image" src="https://github.com/user-attachments/assets/becd2ce4-39dc-4e36-9bb6-0d635a0e8a80" />
