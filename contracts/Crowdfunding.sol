@@ -15,14 +15,22 @@ contract Project {
     // Total amount refunded to donors.
     uint256 public totalRefunded;
 
-    // A donor's refundable contribution balance.
+    // A donor's contribution balance, refundable only if the campaign fails.
     mapping(address => uint256) public donations;
 
     uint256 private _reentrancyStatus = 1;
 
     event DonationReceived(address indexed donor, uint256 amount);
-    event FundsWithdrawn(address indexed owner, uint256 amount);
-    event RefundClaimed(address indexed donor, uint256 amount);
+    event FundsWithdrawn(
+        address indexed owner,
+        address indexed recipient,
+        uint256 amount
+    );
+    event RefundClaimed(
+        address indexed donor,
+        address indexed recipient,
+        uint256 amount
+    );
 
     modifier nonReentrant() {
         require(_reentrancyStatus == 1, "Reentrant call");
@@ -61,26 +69,34 @@ contract Project {
         emit DonationReceived(msg.sender, msg.value);
     }
 
-    // The owner can withdraw after the deadline, but only if the goal was reached.
-    function withdraw(uint256 amount) external nonReentrant {
+    // The owner can withdraw after the deadline if the goal was reached.
+    function withdraw(
+        uint256 amount,
+        address payable recipient
+    ) external nonReentrant {
         require(msg.sender == owner, "Only owner can withdraw");
         require(block.timestamp >= deadline, "Campaign is still active");
         require(totalDonations >= fundingGoal, "Funding goal was not reached");
         require(amount > 0, "Amount must be greater than 0");
         require(amount <= address(this).balance, "Insufficient balance");
+        require(recipient != address(0), "Invalid recipient");
+        require(recipient != address(this), "Cannot send to this contract");
 
         totalWithdrawn += amount;
 
-        (bool success, ) = owner.call{value: amount}("");
+        (bool success, ) = recipient.call{value: amount}("");
         require(success, "Withdrawal failed");
 
-        emit FundsWithdrawn(owner, amount);
+        emit FundsWithdrawn(owner, recipient, amount);
     }
 
-    // Donors can reclaim their contributions after the deadline if the goal was missed.
-    function claimRefund() external nonReentrant {
+    // Donors can reclaim contributions after the deadline if the goal was missed.
+    // A donor may choose another address to receive the refund.
+    function claimRefund(address payable recipient) external nonReentrant {
         require(block.timestamp >= deadline, "Campaign is still active");
         require(totalDonations < fundingGoal, "Funding goal was reached");
+        require(recipient != address(0), "Invalid recipient");
+        require(recipient != address(this), "Cannot send to this contract");
 
         uint256 refundAmount = donations[msg.sender];
         require(refundAmount > 0, "No refund available");
@@ -88,10 +104,10 @@ contract Project {
         donations[msg.sender] = 0;
         totalRefunded += refundAmount;
 
-        (bool success, ) = payable(msg.sender).call{value: refundAmount}("");
+        (bool success, ) = recipient.call{value: refundAmount}("");
         require(success, "Refund transfer failed");
 
-        emit RefundClaimed(msg.sender, refundAmount);
+        emit RefundClaimed(msg.sender, recipient, refundAmount);
     }
 
     function getBalance() external view returns (uint256) {
