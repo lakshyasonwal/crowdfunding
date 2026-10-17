@@ -16,10 +16,11 @@ Contributors can fund the campaign through its deadline. If the campaign reaches
 ## Key Features
 
 - Records each donor's contributions.
-- Emits events for donations, withdrawals, and refunds.
+- Emits events for donations, withdrawals, and refunds, including the payout recipient.
 - Accepts direct ETH transfers while the campaign is active.
 - Allows owner withdrawals only after the deadline and only if the goal was reached.
 - Allows donor refunds only after the deadline if the goal was missed.
+- Lets the owner and each donor choose a payable recipient for withdrawals and refunds.
 - Uses a reentrancy guard on withdrawal and refund calls.
 
 ## Deployment Parameters
@@ -30,6 +31,12 @@ The constructor takes:
 - `durationInSeconds`: campaign duration in seconds.
 
 For example, a goal of 1 ETH is 1000000000000000000 wei, and 30 days is 2592000 seconds.
+
+## Withdrawals and Refunds
+
+- The owner calls `withdraw(amount, recipient)` after the deadline if the goal was reached.
+- A donor calls `claimRefund(recipient)` after the deadline if the goal was missed.
+- The recipient must be a payable address other than the zero address or this contract. If a contract recipient rejects ETH, the transaction reverts and can be retried with a different recipient.
 
 ## Public Getters
 
